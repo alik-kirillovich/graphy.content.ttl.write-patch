@@ -52,6 +52,10 @@ class Turtle_Writer extends Writable {
 			_s_indent: '\t',
 			_b_to_start_1st_predicate_on_nl: false,
 			_b_to_start_objects_on_nl: false,
+			_a_1st_predicates_starting_on_nl: [],
+			_a_1st_predicates_not_starting_on_nl: [],
+			_a_predicates_whose_objects_start_on_nl: [],
+			_a_predicates_whose_objects_dont_start_on_nl: [],
 			_b_simplify_default_graph: false,
 			_xc_directives: 0,
 			_s_token_prefix: '@prefix',
@@ -64,17 +68,35 @@ class Turtle_Writer extends Writable {
 			if(gc_style.indent) {
 				this._s_indent = gc_style.indent.replace(/[^\s]/g, '');
 			}
-
-			// whether the first predicate of a subject must start on a new line
+			
+			// whether the first predicate of a subject must start on a new line (by default)
 			if (gc_style.toStartFirstPredicateOnNewLine) {
 				this._b_to_start_1st_predicate_on_nl = gc_style.toStartFirstPredicateOnNewLine;
 			}
 			
-			// whether objects in object lists must start on a new line
+			// whether objects in object lists must start on a new line (by default)
 			if (gc_style.toStartObjectsOnNewLineInObjectLists) {
 				this._b_to_start_objects_on_nl = gc_style.toStartObjectsOnNewLineInObjectLists;
 			}
-
+						
+			// predicates, that when being the 1st predicates of their subjects, must start on a new line
+			if (gc_style.firstPredicatesStartingOnNewLine) {
+				this._a_1st_predicates_starting_on_nl = gc_style.firstPredicatesStartingOnNewLine;
+			}
+			// predicates, that when being the 1st predicates of their subjects, must not start on a new line
+			if (gc_style.firstPredicatesNotStartingOnNewLine) {
+				this._a_1st_predicates_not_starting_on_nl = gc_style.firstPredicatesNotStartingOnNewLine;
+			}
+			
+			// predicates whose objects in object lists must start on a new line 
+			if (gc_style.predicatesWhoseObjectsStartOnNewLineInObjectLists) {
+				this._a_predicates_whose_objects_start_on_nl = gc_style.predicatesWhoseObjectsStartOnNewLineInObjectLists;
+			}
+			// predicate whose objects in object lists must not start on a new line 
+			if (gc_style.predicatesWhoseObjectsDontStartOnNewLineInObjectLists) {
+				this._a_predicates_whose_objects_dont_start_on_nl = gc_style.predicatesWhoseObjectsDontStartOnNewLineInObjectLists;
+			}
+			
 			// use sparql directives
 			let z_directives = gc_style.directives || gc_style.directives;
 			if(z_directives) {
@@ -125,12 +147,12 @@ class Turtle_Writer extends Writable {
 		// custom list keys
 		if(gc_lists) {
 			// serialize list object
-			this._serialize_list_object = function(a_list, n_nest_level) {
+			this._serialize_list_object = function(a_list, n_nest_level, sc1_predicate) {
 				// transcode list object
 				let hc2_transcoded = this._transcode_list(a_list);
 
 				// serialize object
-				return this._encode_objects(hc2_transcoded, n_nest_level);
+				return this._encode_objects(hc2_transcoded, n_nest_level, sc1_predicate);
 			};
 		}
 
@@ -207,7 +229,8 @@ class Turtle_Writer extends Writable {
 			_h_prefixes: h_prefixes,
 			_s_indent: s_indent,
 			_b_to_start_1st_predicate_on_nl: b_to_start_1st_predicate_on_nl,
-
+			_a_1st_predicates_starting_on_nl: a_1st_predicates_starting_on_nl,
+			_a_1st_predicates_not_starting_on_nl: a_1st_predicates_not_starting_on_nl
 		} = this;
 		// break line if non-data state
 		let s_write = 2 !== this._xc_state? '\n': '';
@@ -252,7 +275,9 @@ class Turtle_Writer extends Writable {
 			for(let sc1_predicate in hc2_pairs) {
 				// start this predicate on a new line, if it is the 1st but is configured to be started this way
 				let b_is_this_first_predicate = (s_indent_pairs == '' && s_term_pairs == '');
-				let b_to_start_this_predicate_on_nl = b_to_start_1st_predicate_on_nl;
+				let b_to_start_this_predicate_on_nl = 
+					a_1st_predicates_starting_on_nl.includes (sc1_predicate) ||
+					(b_to_start_1st_predicate_on_nl && !a_1st_predicates_not_starting_on_nl.includes (sc1_predicate));
 				if (b_is_this_first_predicate && b_to_start_this_predicate_on_nl) {
 					s_indent_pairs = s_indent;
 					s_term_pairs = '\n';
@@ -277,7 +302,7 @@ class Turtle_Writer extends Writable {
 				// ref objects
 				let z_objects = hc2_pairs[sc1_predicate];
 				// serialize objects
-				let st_objects = this._encode_objects(z_objects);
+				let st_objects = this._encode_objects(z_objects, 1, sc1_predicate);
 				// no objects; skip pair
 				if(!st_objects) continue;
 				// not empty
@@ -324,14 +349,16 @@ class Turtle_Writer extends Writable {
 
 
 	// write objects
-	_encode_objects(z_objects, n_nest_level=1) {
+	_encode_objects(z_objects, n_nest_level=1, sc1_predicate) {
 		let {
 			_h_prefixes: h_prefixes,
 			_s_indent: s_indent,
 			_b_to_start_objects_on_nl: b_to_start_objects_on_nl,
+			_a_predicates_whose_objects_start_on_nl: a_predicates_whose_objects_start_on_nl,
+			_a_predicates_whose_objects_dont_start_on_nl: a_predicates_whose_objects_dont_start_on_nl,			
 			_hm_coercions: hm_coercions,
 		} = this;
-
+		
 		// deduce object value type
 		switch(typeof z_objects) {
 			// concise-term string
@@ -351,7 +378,7 @@ class Turtle_Writer extends Writable {
 				// array, list of objects
 				if(Array.isArray(z_objects) || z_objects instanceof Set) {
 					let s_write = '';
-
+					
 					// object terminator
 					let s_term_object = '';
 					
@@ -360,7 +387,9 @@ class Turtle_Writer extends Writable {
 					let n_objects_nest_add_level = 0;
 					
 					// to format the following objects on a new line if they are configured to be formatted this way
-					let b_to_start_these_objects_on_nl = b_to_start_objects_on_nl;
+					let b_to_start_these_objects_on_nl = 
+						a_predicates_whose_objects_start_on_nl.includes (sc1_predicate) ||
+						(b_to_start_objects_on_nl && !a_predicates_whose_objects_dont_start_on_nl.includes (sc1_predicate));
 					if (b_to_start_these_objects_on_nl) {
 						s_objects_indent = '\n'+s_indent.repeat(1+n_nest_level);
 						n_objects_nest_add_level = 1;
@@ -370,12 +399,12 @@ class Turtle_Writer extends Writable {
 					for(let z_item of z_objects) {
 						// item is an array; serialize list
 						if(Array.isArray(z_item)) {
-							s_write += s_term_object + s_objects_indent + this._serialize_list_object(z_item, n_nest_level+n_objects_nest_add_level);
+							s_write += s_term_object + s_objects_indent + this._serialize_list_object(z_item, n_nest_level+n_objects_nest_add_level, sc1_predicate);
 						}
 						// non-array
 						else {
 							// recurse on item
-							s_write += s_term_object + s_objects_indent + this._encode_objects(z_item, n_nest_level+n_objects_nest_add_level);
+							s_write += s_term_object + s_objects_indent + this._encode_objects(z_item, n_nest_level+n_objects_nest_add_level, sc1_predicate);
 						}
 
 						// terminate next object
@@ -417,7 +446,7 @@ class Turtle_Writer extends Writable {
 
 						// write predicate and object(s)
 						s_write += factory.c1(sc1_predicate, h_prefixes).terse(h_prefixes) + ' '
-							+ this._encode_objects(z_objects[sc1_predicate], n_nest_level+1) +' ;';
+							+ this._encode_objects(z_objects[sc1_predicate], n_nest_level+1, sc1_predicate) +' ;';
 					}
 
 					// close blank node block
@@ -455,7 +484,7 @@ class Turtle_Writer extends Writable {
 	}
 
 	// serialize collection object
-	_serialize_collection_object(a_collection, n_nest_level) {
+	_serialize_collection_object(a_collection, n_nest_level, sc1_predicate) {
 		let s_indent = this._s_indent;
 
 		// open collection block
@@ -467,11 +496,11 @@ class Turtle_Writer extends Writable {
 
 			// item is array; serialize as sub-collection
 			if(Array.isArray(z_item)) {
-				s_objects = this._serialize_collection_object(z_item, n_nest_level+1);
+				s_objects = this._serialize_collection_object(z_item, n_nest_level+1, sc1_predicate);
 			}
 			// non-array item
 			else {
-				s_objects = this._encode_objects(z_item, n_nest_level+1);
+				s_objects = this._encode_objects(z_item, n_nest_level+1, sc1_predicate);
 			}
 
 			// serialize collection
