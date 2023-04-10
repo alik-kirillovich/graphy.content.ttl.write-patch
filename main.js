@@ -51,6 +51,7 @@ class Turtle_Writer extends Writable {
 			_b_debug: b_debug,
 			_s_indent: '\t',
 			_b_to_start_1st_predicate_on_nl: false,
+			_b_to_start_objects_on_nl: false,
 			_b_simplify_default_graph: false,
 			_xc_directives: 0,
 			_s_token_prefix: '@prefix',
@@ -67,6 +68,11 @@ class Turtle_Writer extends Writable {
 			// whether the first predicate of a subject must start on a new line
 			if (gc_style.toStartFirstPredicateOnNewLine) {
 				this._b_to_start_1st_predicate_on_nl = gc_style.toStartFirstPredicateOnNewLine;
+			}
+			
+			// whether objects in object lists must start on a new line
+			if (gc_style.toStartObjectsOnNewLineInObjectLists) {
+				this._b_to_start_objects_on_nl = gc_style.toStartObjectsOnNewLineInObjectLists;
 			}
 
 			// use sparql directives
@@ -322,6 +328,7 @@ class Turtle_Writer extends Writable {
 		let {
 			_h_prefixes: h_prefixes,
 			_s_indent: s_indent,
+			_b_to_start_objects_on_nl: b_to_start_objects_on_nl,
 			_hm_coercions: hm_coercions,
 		} = this;
 
@@ -347,17 +354,28 @@ class Turtle_Writer extends Writable {
 
 					// object terminator
 					let s_term_object = '';
+					
+					// line break and indent for objects
+					let s_objects_indent = '';
+					let n_objects_nest_add_level = 0;
+					
+					// to format the following objects on a new line if they are configured to be formatted this way
+					let b_to_start_these_objects_on_nl = b_to_start_objects_on_nl;
+					if (b_to_start_these_objects_on_nl) {
+						s_objects_indent = '\n'+s_indent.repeat(1+n_nest_level);
+						n_objects_nest_add_level = 1;
+					}
 
 					// each object
 					for(let z_item of z_objects) {
 						// item is an array; serialize list
 						if(Array.isArray(z_item)) {
-							s_write += s_term_object + this._serialize_list_object(z_item, n_nest_level);
+							s_write += s_term_object + s_objects_indent + this._serialize_list_object(z_item, n_nest_level+n_objects_nest_add_level);
 						}
 						// non-array
 						else {
 							// recurse on item
-							s_write += s_term_object + this._encode_objects(z_item, n_nest_level);
+							s_write += s_term_object + s_objects_indent + this._encode_objects(z_item, n_nest_level+n_objects_nest_add_level);
 						}
 
 						// terminate next object
