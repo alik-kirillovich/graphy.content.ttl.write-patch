@@ -50,6 +50,7 @@ class Turtle_Writer extends Writable {
 		Object.assign(this, {
 			_b_debug: b_debug,
 			_s_indent: '\t',
+			_b_to_start_1st_predicate_on_nl: false,
 			_b_simplify_default_graph: false,
 			_xc_directives: 0,
 			_s_token_prefix: '@prefix',
@@ -61,6 +62,11 @@ class Turtle_Writer extends Writable {
 			// indent
 			if(gc_style.indent) {
 				this._s_indent = gc_style.indent.replace(/[^\s]/g, '');
+			}
+
+			// whether the first predicate of a subject must start on a new line
+			if (gc_style.toStartFirstPredicateOnNewLine) {
+				this._b_to_start_1st_predicate_on_nl = gc_style.toStartFirstPredicateOnNewLine;
 			}
 
 			// use sparql directives
@@ -194,6 +200,7 @@ class Turtle_Writer extends Writable {
 		let {
 			_h_prefixes: h_prefixes,
 			_s_indent: s_indent,
+			_b_to_start_1st_predicate_on_nl: b_to_start_1st_predicate_on_nl,
 
 		} = this;
 		// break line if non-data state
@@ -237,6 +244,13 @@ class Turtle_Writer extends Writable {
 			let f_exit_predicate = null;
 			// each predicate
 			for(let sc1_predicate in hc2_pairs) {
+				// start this predicate on a new line, if it is the 1st but is configured to be started this way
+				let b_is_this_first_predicate = (s_indent_pairs == '' && s_term_pairs == '');
+				let b_to_start_this_predicate_on_nl = b_to_start_1st_predicate_on_nl;
+				if (b_is_this_first_predicate && b_to_start_this_predicate_on_nl) {
+					s_indent_pairs = s_indent;
+					s_term_pairs = '\n';
+				}
 				// directive
 				if('`' === sc1_predicate[0]) {
 					// apply directive
