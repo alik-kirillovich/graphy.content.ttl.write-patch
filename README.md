@@ -58,6 +58,7 @@ Let `objConcGraph` object be a concise representation of some RDF graph. Turtle 
 
 ```javascript
 const graphy = require('graphy');
+const ttlWrite = require('./main.js');
 
 //Config object for customizing style of the generated Turtle serialization
 let objStyle = {};
@@ -123,7 +124,7 @@ let objPrefixes =
   dc: "http://purl.org/dc/elements/1.1/",
   };
 
-let streemWriter = graphy.content.ttl.write
+let streemWriter = ttlWrite
   ({
   prefixes: objPrefixes,
   style: objStyle
@@ -337,6 +338,7 @@ The generated Turtle serialization:
 ```javascript
 const graphy = require('graphy');
 const factory = require('@graphy/core.data.factory');
+const ttlWrite = require('./main.js');
 
 let objStyle = {};
 
@@ -407,7 +409,7 @@ let objPrefixes =
   eg: 'http://ex.org/owl#'
   };
 
-let streemWriter = graphy.content.ttl.write
+let streemWriter = ttlWrite
   ({
   prefixes: objPrefixes,
   style: objStyle
@@ -467,5 +469,24 @@ See all these examples in the [examples.js](examples.js) file.
 
 ## Installation:
 
-1. Install the graphy module in the current directory: `npm i graphy`.
-2. Replace `[current_dir]/node_modules/@graphy/content.ttl.write/main.js` by the [main.js](main.js) patch from this repository.
+### As a stand-alone module
+1. Clone or donwload and unzip this repository; and go to its local direcory.
+2. Install the graphy supermodule in the current directory: `npm i graphy`.
+3. In your code, load the patched version as a stand-alone module:
+```
+const ttlWrite = require('./main.js');
+```
+
+### As a patch
+1. Clone or donwload and unzip this repository; and go to its local direcory. 
+2. Install the graphy supermodule in the current directory: `npm i graphy`.
+3. Replace `[current_dir]/node_modules/@graphy/content.ttl.write/main.js` by the [main.js](main.js) patch from this repository.
+4. In your code, load the patched version as usual:
+```
+const ttlWrite = require('@graphy/content.ttl.read');
+```
+or 
+```
+const graphy = require('graphy');
+const ttlWrite = graphy.content.ttl.write;
+```
