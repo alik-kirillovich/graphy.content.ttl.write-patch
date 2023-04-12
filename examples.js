@@ -1,19 +1,20 @@
+/*
+Before running this script,
+first install the graphy supermodule in the current directory:
+
+npm i graphy
+*/
+
 const fs = require('fs');
 const graphy = require('graphy');
 const factory = require('@graphy/core.data.factory');
 
-/*
-To run the examples:
+//Load the patched version of the @graphy/content.ttl.write module,
+//instead of the original version:
+const ttlWrite = require('./main.js');
 
-1. Install the graphy module in the current directory:
-   npm i graphy
-   
-2. Replace [current_dir]/node_modules/@graphy/content.ttl.write/main.js
-   by the patch [current_dir]/main.js
-
-3. Run this script:
-   node examples.js
-*/
+//The original version of the @graphy/content.ttl.write module (commented):
+//const ttlWrite = require('@graphy/content.ttl.read');
 
 let objPrefixes =
   {
@@ -89,7 +90,7 @@ let objConfig =
 
 //Example 1. Default style:
 
-let streemWriter1 = graphy.content.ttl.write
+let streemWriter1 = ttlWrite
   ({
   prefixes: objPrefixes,
   style: {}
@@ -127,7 +128,7 @@ Output:
 
 //Example 2. All the first predicates of their subjects start on a new line:
 
-let streemWriter2 = graphy.content.ttl.write
+let streemWriter2 = ttlWrite
   ({
   prefixes: objPrefixes,
   style:
@@ -169,7 +170,7 @@ Output:
 
 //Example 3. All objects in object lists (i.e. separated by commas) start on a new line:
 
-let streemWriter3 = graphy.content.ttl.write
+let streemWriter3 = ttlWrite
   ({
   prefixes: objPrefixes,
   style:
@@ -224,7 +225,7 @@ Output:
 //Example 4. All the first predicates of their subjects start on a new line
 //and and all objects in object lists start on a new line:
 
-let streemWriter4 = graphy.content.ttl.write
+let streemWriter4 = ttlWrite
   ({
   prefixes: objPrefixes,
   style:
@@ -282,7 +283,7 @@ Output:
 //All the first predicates of their subjects with the exception of the rdf:type predicate,
 //and all objects in object lists start on a new line with the exception of the objects of the rdf:type predicate
 
-let streemWriter5 = graphy.content.ttl.write
+let streemWriter5 = ttlWrite
   ({
   prefixes: objPrefixes,
   style:
@@ -340,7 +341,7 @@ Output:
 //The rdfs:label predicate, when being the first predicate of its subject, starts on a new line, and
 //the objects in object lists of the skos:hasTopConcept predicate start on a new line:
 
-let streemWriter6 = graphy.content.ttl.write
+let streemWriter6 = ttlWrite
   ({
   prefixes: objPrefixes,
   style:
@@ -388,7 +389,7 @@ Output:
 
 //Example 7 with nested nodes:
 
-let streemWriter7 = graphy.content.ttl.write
+let streemWriter7 = ttlWrite
   ({
   prefixes:
     {
@@ -514,4 +515,3 @@ eg:HappyPerson
   ] .
 
 */
-
