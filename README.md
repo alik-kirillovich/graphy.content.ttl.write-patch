@@ -483,7 +483,7 @@ const ttlWrite = require('./main.js');
 3. Replace `[current_dir]/node_modules/@graphy/content.ttl.write/main.js` by the [main.js](main.js) patch from this repository.
 4. In your code, load the patched version as usual:
 ```
-const ttlWrite = require('@graphy/content.ttl.read');
+const ttlWrite = require('@graphy/content.ttl.write');
 ```
 or 
 ```
